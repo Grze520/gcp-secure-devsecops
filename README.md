@@ -46,3 +46,5 @@ wykorzystujący narzędzia **Terraform** oraz **GitHub Actions**. Całość zost
 1. **Security Auditing:** Statyczna analiza kodu skryptów Terraform pod kątem podatności.
 2. **Secure Terraform Deploy:** Autoryzacja bezkluczowa przez OIDC -> Automatyczne postawienie sieci VPC, reguł zapory sieciowej oraz maszyn VM.
 3. **App Bootstrap:** Uruchomienie i konfiguracja bezpiecznego kontenera Docker obsługującego aplikację.
+
+   
