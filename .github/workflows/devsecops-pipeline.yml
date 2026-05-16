@@ -1,0 +1,73 @@
+name: "GCP Secure DevSecOps Pipeline"
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write # Wymagane do bezkluczowego logowania OIDC
+  contents: read  # Wymagane do pobrania kodu repozytorium
+
+jobs:
+  # FAZA 1: Statyczna analiza bezpieczeństwa (SAST)
+  security_scans:
+    name: "Security Auditing"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Skanowanie plików Terraform (Checkov)
+      - name: Run Checkov (IaC Scan)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
+          output_format: cli
+          soft_fail: true # Pozwoli przejść dalej w celach edukacyjnych, ale wyświetli raport błędów w konsoli GitHuba
+
+      # Skanowanie obrazu Docker pod kątem luk bezpieczeństwa (Trivy)
+      - name: Run Trivy (Container Vulnerability Scan)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'nginx:alpine' # Skanujemy bazowy obraz naszej aplikacji
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  # FAZA 2: Bezpieczne wdrożenie do Google Cloud
+  deploy_to_gcp:
+    name: "Secure Terraform Deploy"
+    runs-on: ubuntu-latest
+    needs: security_scans # Uruchomi się dopiero, gdy skanery bezpieczeństwa zakończą pracę
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Logowanie OIDC - kluczowy element Workload Identity Federation (Zero kluczy na dysku!)
+      - name: Authenticate to Google Cloud via OIDC
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ tactics.gcp_workload_identity_provider }}
+          service_account: ${{ tactics.gcp_service_account }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+
+      - name: Terraform Plan
+        run: terraform plan
+        working-directory: ./terraform
+
+      # Ta komenda uruchomi kod z pliku main.tf i postawi Twoją maszynę oraz sieć w GCP
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./terraform
