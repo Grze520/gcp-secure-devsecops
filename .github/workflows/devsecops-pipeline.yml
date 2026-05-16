@@ -43,13 +43,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+      
       # Logowanie OIDC - kluczowy element Workload Identity Federation (Zero kluczy na dysku!)
       - name: Authenticate to Google Cloud via OIDC
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ tactics.gcp_workload_identity_provider }}
-          service_account: ${{ tactics.gcp_service_account }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
