@@ -2,8 +2,10 @@ name: "GCP Secure DevSecOps Pipeline"
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      
 
 permissions:
   id-token: write # Wymagane do bezkluczowego logowania OIDC
